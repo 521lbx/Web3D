@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js canvas - particles - waves</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				/*background-color: #097bdb;*/
+				margin: 0px;
+				overflow: hidden;
+				background: url(img/bgimg.png) no-repeat 0 0;
+			}
+			a {
+				color:#0078ff;
+			}
+			.container{
+				position:fixed;
+				height:600px;
+				left:0;
+				right:0;
+				bottom:0;
+				z-index: 2;
+			}
+			
+			
+			.login-box{
+				width: 300px;
+				height: 310px;
+				background: #fff;
+				position: fixed;
+				top: 50%;
+				left: 50%;
+				margin-top: -200px;
+				margin-left: -170px;
+				border-radius: 12px;
+				padding: 20px;
+				z-index: 3;
+			}
+			
+			.items, .item{
+			    position:absolute;
+			    left:0;
+			    top:0;
+			    width:100%;
+			    height:100%;
+			    overflow:hidden;
+			}
+			
+			.items{
+			    overflow:visible;
+			}
+			
+			.item{
+			    background:#fff none no-repeat center center;
+			    -webkit-background-size:cover;
+			    -moz-background-size:cover;
+			    -o-background-size:cover;
+			    background-size:cover;
+			} 
+			
+			.logo_bg{
+				width: 140px;
+				height: 43px;
+				/*background: url('img/login-bg1.png') no-repeat;*/
+				margin: 20px auto 0;
+				padding-bottom: 11px;
+				font-size: 22px;
+				color:#097bdb;
+				font-weight: bold;
+			}
+			
+			.login-text{
+				color:#097bdb;
+				font-weight: bold;
+				font-size: 14px;
+				/*color: #333;*/
+				margin: 30px auto 0 auto;
+			}
+			.login_input::-webkit-input-placeholder {
+				color: #ccc;
+			}
+			.login_input{
+				color:#097bdb;
+				width:300px;
+				height:30px;
+				border:none;
+				/*border-bottom: 1px solid #ffe600;*/
+				border-bottom: 1px solid #097bdb;
+				margin: 5px auto 0 auto;
+				border-radius: 20px;
+				outline: none;
+				text-indent: 20px;
+			}
+			.login_sub{
+				margin: 34px auto 0 auto;
+				width:300px;
+				height: 30px;
+				line-height: 30px;
+				text-align: center;
+				border-radius: 20px;
+				border: 1px solid #097bdb;
+				
+				/*background-color:#ffe600;*/
+				/*border: 1px solid #ffe600;*/
+				background-color:#fff;
+				color:#097bdb;
+				font-weight: bold;
+			}
+		</style>
+	</head>
+	<body>
+		<script src="js/three.js"></script>
+		<script src="js/Projector.js"></script>
+		<script src="js/CanvasRenderer.js"></script>
+		<script src="js/stats.min.js"></script><!--性能监视器-->
+		<body>
+			<div class="login-box">
+				<div class="login-box-right">
+					<div class="logo_bg">My First 3D</div>
+					
+					<div class="login-text">账号</div>
+	
+					<input class="login_input"  placeholder="请输入账号" >
+	
+					<div class="login-text">密码</div>
+	
+					<input class="login_input"  placeholder="请输入密码" :type="passtype" >
+					<div class="login_sub">登&nbsp;录</div>
+				</div>
+			</div>
+		
+				<!--<div class="items">
+					<div class="item" style="background-image:url(../static/img/login-bg.jpg);"></div>
+				</div>-->
+			
+			<div id="canvas-frame" class="container"></div>
+		</body>
+		<script>
+			var SEPARATION = 100, AMOUNTX = 50, AMOUNTY = 50;
+			var container, stats;//容器，监视器
+			var camera, scene, renderer;//相机，场景，渲染器
+			var particles, particle, count = 0;
+			var mouseX = 0, mouseY = -438;//设置初始位置
+			var windowHalfX = window.innerWidth / 2;
+			var windowHalfY = window.innerHeight / 2;
+			init();
+			animate();
+			function init() {
+				camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
+				camera.position.z = 1000;
+				
+				console.log(camera.position.x,camera.position.y,camera.position.z)
+				scene = new THREE.Scene();
+				particles = new Array();
+				var PI2 = Math.PI * 2;
+				var material = new THREE.SpriteCanvasMaterial( {
+					color: 0x097bdb,
+					//color:0xffe600,//小点点的颜色
+					
+					program: function ( context ) {
+						context.beginPath();
+						context.arc( 0, 0, 0.5, 0, PI2, true );
+						context.fill();
+					}
+				} );
+				var i = 0;
+				for ( var ix = 0; ix < AMOUNTX; ix ++ ) {
+					for ( var iy = 0; iy < AMOUNTY; iy ++ ) {
+						particle = particles[ i ++ ] = new THREE.Sprite( material );
+						particle.position.x = ix * SEPARATION - ( ( AMOUNTX * SEPARATION ) / 2 );
+						particle.position.z = iy * SEPARATION - ( ( AMOUNTY * SEPARATION ) / 2 );
+						scene.add( particle );
+					}
+				}
+				
+				var width = document.getElementById('canvas-frame').clientWidth;
+                var height = document.getElementById('canvas-frame').clientHeight;
+                renderer = new THREE.CanvasRenderer({
+                    antialias : true,
+                    alpha: true//设置背景透明
+                });
+                renderer.setSize(width, height);
+                document.getElementById('canvas-frame').appendChild(renderer.domElement);
+                //renderer.setClearColor(0x13194b);//设置背景色
+				stats = new Stats();
+				document.getElementById('canvas-frame').appendChild( stats.dom );
+				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+				document.addEventListener( 'touchstart', onDocumentTouchStart, false );
+				document.addEventListener( 'touchmove', onDocumentTouchMove, false );
+				//
+				window.addEventListener( 'resize', onWindowResize, false );
+				
+				
+				camera.position.x = 133.99999999999972;
+				camera.position.y = 437.99999999999943;
+				camera.lookAt( scene.position );
+				renderer.render( scene, camera );
+			}
+			function onWindowResize() {
+				windowHalfX = window.innerWidth / 2;
+				windowHalfY = window.innerHeight / 2;
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+			}
+			//
+			var temx = 0,tempy=0;
+			function onDocumentMouseMove( event ) {
+				mouseX = event.clientX - windowHalfX;
+				mouseY = -438;
+				//mouseY = event.clientY - windowHalfY;
+			}
+			function onDocumentTouchStart( event ) {
+				if ( event.touches.length === 1 ) {
+					event.preventDefault();
+					mouseX = event.touches[ 0 ].pageX - windowHalfX;
+					mouseY = event.touches[ 0 ].pageY - windowHalfY;
+				}
+			}
+			function onDocumentTouchMove( event ) {
+				if ( event.touches.length === 1 ) {
+					event.preventDefault();
+					mouseX = event.touches[ 0 ].pageX - windowHalfX;
+					mouseY = event.touches[ 0 ].pageY - windowHalfY;
+				}
+			}
+			//
+			function animate() {
+				requestAnimationFrame( animate );
+				render();
+				stats.update();
+			}
+			function render() {//移动相机形成动画
+				camera.position.x += ( mouseX - camera.position.x ) * .05;
+				camera.position.y += ( - mouseY - camera.position.y ) * .05;
+				//console.log('camera.position.y',camera.position.y)
+				camera.lookAt( scene.position );
+				var i = 0;
+				for ( var ix = 0; ix < AMOUNTX; ix ++ ) {
+					for ( var iy = 0; iy < AMOUNTY; iy ++ ) {
+						particle = particles[ i++ ];
+						particle.position.y = ( Math.sin( ( ix + count ) * 0.3 ) * 50 ) +
+							( Math.sin( ( iy + count ) * 0.5 ) * 50 );
+						particle.scale.x = particle.scale.y = ( Math.sin( ( ix + count ) * 0.3 ) + 1 ) * 4 +
+							( Math.sin( ( iy + count ) * 0.5 ) + 1 ) * 4;
+					}
+				}
+				
+				//console.log(camera.position.x,camera.position.y,camera.position.z)
+				renderer.render( scene, camera );
+				count += 0.1;
+			}
+		</script>
+	</body>
+</html>
